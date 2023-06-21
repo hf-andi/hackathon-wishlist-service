@@ -56,25 +56,30 @@ def extract_data_from_event(event):
 
 def lambda_handler(event, context):
     user_uuid, file_key, user_labels = extract_data_from_event(event)
-    print(user_uuid)
-    print(file_key)
-    print(user_labels)
-
-    # save to user db
 
     cur = connect_to_db()
 
+    # save to user db
+    labels = json.dumps(user_labels)
+    query = f"insert into user_uploads (user_uuid, s3_file_key, labels, upload_time, matching_recipe) values ('{user_uuid}', '{file_key}', '{labels}', now(), null);"
+    cur.execute(query)
+
     recipe_id = compare_labels(user_labels, cur)
 
-    query = f"select * from recipes where uuid = '{recipe_id}';"
-    cur.execute(query)
-    matching_recipe = cur.fetchone()
+    if recipe_id is not None:
+        # update user
+        query = f"update user_uploads set matching_recipe = '{recipe_id}' where user_uuid = '{user_uuid}';"
+        cur.execute(query)
 
-    print(f"The final recipe is {matching_recipe}")
+        # get all the details of the matching recipe
+        query = f"select * from recipes where uuid = '{recipe_id}';"
+        cur.execute(query)
+        matching_recipe = cur.fetchone()
+
+        print(f"The final recipe is {matching_recipe}")
+    else:
+        print("no match found :( ")
 
     cur.close()
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
-
-
-# body = {"user_uuid": "test_uuid", "s3_file_key": "user-uploads/cheeseburger.jpeg", "labels": [{"Name": "PORK", "Confidence": 71.5260009765625}, {"Name": "FRIES", "Confidence": 67.23100280761719}, {"Name": "DHAL", "Confidence": 56.61600112915039}, {"Name": "BURGER", "Confidence": 56.055999755859375}]}
