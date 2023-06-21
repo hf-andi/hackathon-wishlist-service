@@ -1,10 +1,12 @@
 import json
 import os
 
-import boto3
-
 AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
 AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
+<<<<<<< Updated upstream
+=======
+print("PUBLIC_KEY", AWS_SERVER_PUBLIC_KEY, "PRIVATE_KEY", AWS_SERVER_SECRET_KEY)
+>>>>>>> Stashed changes
 
 
 def extract_s3_bucket_and_filekey_from_sqs_event(event):
