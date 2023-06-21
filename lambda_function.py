@@ -2,9 +2,28 @@ import json
 import os
 
 import boto3
+import psycopg2
 
 AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
 AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
+
+
+def connect_to_db():
+    try:
+        conn = psycopg2.connect(
+            host=os.environ["HOST"],
+            database=os.environ["DB_NAME"],
+            user=os.environ["USERNAME"],
+            password=os.environ["PASSWORD"]
+        )
+        return conn.cursor()
+    except Exception as e:
+        print(e)
+        print("can't connect to db for some reason")
+    finally:
+        if conn is not None:
+            conn.close()
+            print('Database connection closed.')
 
 
 def extract_s3_bucket_and_filekey_from_sqs_event(event):
@@ -46,6 +65,9 @@ def lambda_handler(event, context):
         Image={"S3Object": {"Bucket": bucket_name, "Name": filekey}},
         MinConfidence=70,
     )
+
+    cur = connect_to_db()
+    cur.execute('select * from recipes')
     print(response)
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
