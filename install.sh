@@ -1,1 +1,1 @@
-pip install --target ./package boto3
+pip install --target ./package $1
