@@ -44,7 +44,6 @@ def lambda_handler(event, context):
             arn:aws:rekognition:ap-southeast-2:532495396307:project/wishlist-service/version/wishlist-service.2023-06-20T16.07.25/1687241245408
         """,
         Image={"S3Object": {"Bucket": bucket_name, "Name": filekey}},
-        MaxLabels=3,
         MinConfidence=70,
     )
     print(response)
