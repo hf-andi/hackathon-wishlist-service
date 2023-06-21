@@ -60,7 +60,9 @@ def lambda_handler(event, context):
     query = f"select * from recipes where uuid = '{recipe_id}';"
     cur.execute(query)
     matching_recipe = cur.fetchone()
+
     print(f"The final recipe is {matching_recipe}")
+
     cur.close()
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
