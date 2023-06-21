@@ -60,16 +60,16 @@ def lambda_handler(event, context):
     cur = connect_to_db()
 
     # save to user db
-    labels = json.dumps(user_labels)
-    query = f"insert into user_uploads (user_uuid, s3_file_key, labels, upload_time, matching_recipe) values ('{user_uuid}', '{file_key}', '{labels}', now(), null);"
-    cur.execute(query)
+    # labels = json.dumps(user_labels)
+    # query = f"insert into user_uploads (user_uuid, s3_file_key, labels, upload_time, matching_recipe) values ('{user_uuid}', '{file_key}', '{labels}', now(), null);"
+    # cur.execute(query)
 
     recipe_id = compare_labels(user_labels, cur)
 
     if recipe_id is not None:
         # update user
-        query = f"update user_uploads set matching_recipe = '{recipe_id}' where user_uuid = '{user_uuid}';"
-        cur.execute(query)
+        # query = f"update user_uploads set matching_recipe = '{recipe_id}' where user_uuid = '{user_uuid}';"
+        # cur.execute(query)
 
         # get all the details of the matching recipe
         query = f"select * from recipes where uuid = '{recipe_id}';"
