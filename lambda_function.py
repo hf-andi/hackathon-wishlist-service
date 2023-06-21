@@ -48,10 +48,19 @@ def compare_labels(user_labels, cur):
     return best_match_id
 
 
-def lambda_handler(event, context):
+def extract_data_from_event(event):
+    print("event", event)
+    msg = json.loads(event["Records"][0]["body"])
+    return msg["user_uuid"], msg["s3_file_key"], msg["labels"]
 
-    # TODO get the user data here
-    user_labels = [{'Name': 'BURGER', 'Confidence': 100}]
+
+def lambda_handler(event, context):
+    user_uuid, file_key, user_labels = extract_data_from_event(event)
+    print(user_uuid)
+    print(file_key)
+    print(user_labels)
+
+    # save to user db
 
     cur = connect_to_db()
 
@@ -66,3 +75,6 @@ def lambda_handler(event, context):
     cur.close()
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
+
+
+# body = {"user_uuid": "test_uuid", "s3_file_key": "user-uploads/cheeseburger.jpeg", "labels": [{"Name": "PORK", "Confidence": 71.5260009765625}, {"Name": "FRIES", "Confidence": 67.23100280761719}, {"Name": "DHAL", "Confidence": 56.61600112915039}, {"Name": "BURGER", "Confidence": 56.055999755859375}]}
