@@ -1,12 +1,7 @@
 import json
 import os
 
-import boto3
 import psycopg2
-
-AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
-AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
-MODEL_ARN = os.environ["MODEL_ARN"]
 
 
 def connect_to_db():
@@ -15,58 +10,57 @@ def connect_to_db():
             host=os.environ["HOST"],
             database=os.environ["DB_NAME"],
             user=os.environ["USERNAME"],
-            password=os.environ["PASSWORD"]
+            password=os.environ["PASSWORD"],
+            port=os.environ["PORT"]
         )
         return conn.cursor()
     except Exception as e:
         print(e)
         print("can't connect to db for some reason")
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
 
 
-def extract_s3_bucket_and_filekey_from_sqs_event(event):
+def compare_labels(user_labels, cur):
     """
-    Extracts the bucket name and file key string from an SQS message
-    :param queue_name: SQS message
-    :return: bucket_name, filekey string tuple
+    user_labels format: [{'Name': 'Food', 'Confidence': 94.69338989257812}]
+    :return:
     """
+    # Get data from dictionary
+    query = 'select uuid as uuid, labels as labels from recipes;'
+    cur.execute(query)
+    db_recipes = cur.fetchall()
 
-    msg = json.loads(event["Records"][0]["body"])
-    msg = msg["Records"][0]["s3"]
+    best_match_score = 0
+    best_match_id = None
+    for recipe_uuid, recipe_labels in db_recipes:
+        score = 0
+        print(recipe_labels)
+        for label in user_labels:
+            for recipe_label in recipe_labels:
+                if recipe_label["Name"].upper() == label["Name"].upper():
+                    score += (label["Confidence"] / 100) * (recipe_label["Confidence"] / 100)
+                    # score += 1
+        if score > best_match_score and score > 0.5:
+            best_match_score = score
+            best_match_id = recipe_uuid
 
-    return msg["bucket"]["name"], msg["object"]["key"]
+    print(f"the final score is {best_match_score}")
+    print(f"{best_match_id} is the id of the final recipe")
+    return best_match_id
 
 
 def lambda_handler(event, context):
 
-    print("EVENT", event)
-
-    bucket_name, filekey = extract_s3_bucket_and_filekey_from_sqs_event(event)
-
-    client = boto3.client(
-        "rekognition",
-        aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
-        aws_secret_access_key=AWS_SERVER_SECRET_KEY,
-    )
-
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=AWS_SERVER_PUBLIC_KEY,
-        aws_secret_access_key=AWS_SERVER_SECRET_KEY,
-    )
-    fileObj = s3.get_object(Bucket=bucket_name, Key=filekey)
-    fileObj["Body"].read()
-    response = client.detect_custom_labels(
-        ProjectVersionArn=MODEL_ARN,
-        Image={"S3Object": {"Bucket": bucket_name, "Name": filekey}},
-        MinConfidence=70,
-    )
+    # TODO get the user data here
+    user_labels = [{'Name': 'BURGER', 'Confidence': 100}]
 
     cur = connect_to_db()
-    cur.execute('select * from recipes')
-    print(response)
+
+    recipe_id = compare_labels(user_labels, cur)
+
+    query = f"select * from recipes where uuid = '{recipe_id}';"
+    cur.execute(query)
+    matching_recipe = cur.fetchone()
+    print(f"The final recipe is {matching_recipe}")
+    cur.close()
 
     return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
