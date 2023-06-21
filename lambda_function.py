@@ -14,6 +14,7 @@ def extract_s3_bucket_and_filekey_from_sqs_event(event):
     """
 
     msg = json.loads(event["Records"][0]["body"])
+    print("MSG", msg)
     msg = msg["Records"][0]["s3"]
 
     return msg["bucket"]["name"], msg["object"]["key"]
