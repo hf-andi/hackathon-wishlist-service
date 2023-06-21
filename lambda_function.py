@@ -26,6 +26,8 @@ def extract_s3_bucket_and_filekey_from_sqs_event(event):
 
 def lambda_handler(event, context):
 
+    print("EVENT", event)
+
     bucket_name, filekey = extract_s3_bucket_and_filekey_from_sqs_event(event)
 
     client = boto3.client(
