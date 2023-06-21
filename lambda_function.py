@@ -1,10 +1,11 @@
 import json
 import os
+
 import boto3
-import psycopg2
 
 AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
 AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
+
 
 def extract_s3_bucket_and_filekey_from_sqs_event(event):
     """
@@ -14,7 +15,6 @@ def extract_s3_bucket_and_filekey_from_sqs_event(event):
     """
 
     msg = json.loads(event["Records"][0]["body"])
-    print("MSG", msg)
     msg = msg["Records"][0]["s3"]
 
     return msg["bucket"]["name"], msg["object"]["key"]
@@ -39,8 +39,13 @@ def lambda_handler(event, context):
     )
     fileObj = s3.get_object(Bucket=bucket_name, Key=filekey)
     fileObj["Body"].read()
-    response = client.detect_labels(
-        Image={"S3Object": {"Bucket": bucket_name, "Name": filekey}}, MaxLabels=3, MinConfidence=70
+    response = client.detect_custom_labels(
+        ProjectVersionArn="""
+            arn:aws:rekognition:ap-southeast-2:532495396307:project/wishlist-service/version/wishlist-service.2023-06-20T16.07.25/1687241245408
+        """,
+        Image={"S3Object": {"Bucket": bucket_name, "Name": filekey}},
+        MaxLabels=3,
+        MinConfidence=70,
     )
     print(response)
 
