@@ -1,7 +1,7 @@
 import json
 import os
-import package.boto3
-import package.psycopg2
+import package.boto3 as boto3
+import package.psycopg2 as psycopg2
 
 AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
 AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
