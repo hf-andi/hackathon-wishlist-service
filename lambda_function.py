@@ -5,10 +5,6 @@ import boto3
 
 AWS_SERVER_PUBLIC_KEY = os.environ["AWS_SERVER_PUBLIC_KEY"]
 AWS_SERVER_SECRET_KEY = os.environ["AWS_SERVER_SECRET_KEY"]
-print(
-    "PUBLIC_KEY", AWS_SERVER_PUBLIC_KEY,
-    "PRIVATE_KEY", AWS_SERVER_SECRET_KEY
-)
 
 
 def extract_s3_bucket_and_filekey_from_sqs_event(event):
