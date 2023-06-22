@@ -4,19 +4,20 @@ import os
 import psycopg2
 
 
-def connect_to_db():
-    try:
-        conn = psycopg2.connect(
-            host=os.environ["HOST"],
-            database=os.environ["DB_NAME"],
-            user=os.environ["USERNAME"],
-            password=os.environ["PASSWORD"],
-            port=os.environ["PORT"]
-        )
-        return conn.cursor()
-    except Exception as e:
-        print(e)
-        print("can't connect to db for some reason")
+conn = None
+cur = None
+try:
+    conn = psycopg2.connect(
+        host=os.environ["HOST"],
+        database=os.environ["DB_NAME"],
+        user=os.environ["USERNAME"],
+        password=os.environ["PASSWORD"],
+        port=os.environ["PORT"]
+    )
+    cur = conn.cursor()
+except Exception as e:
+    print(e)
+    print("can't connect to db for some reason")
 
 
 def compare_labels(user_labels, cur):
@@ -57,12 +58,11 @@ def extract_data_from_event(event):
 def lambda_handler(event, context):
     user_uuid, file_key, user_labels = extract_data_from_event(event)
 
-    cur = connect_to_db()
-
     # save to user db
     labels = json.dumps(user_labels)
     query = f"insert into user_uploads (user_uuid, s3_file_key, labels, upload_time, matching_recipe) values ('{user_uuid}', '{file_key}', '{labels}', now(), null);"
     cur.execute(query)
+    conn.commit()
 
     recipe_id = compare_labels(user_labels, cur)
 
@@ -70,6 +70,7 @@ def lambda_handler(event, context):
         # update user
         query = f"update user_uploads set matching_recipe = '{recipe_id}' where user_uuid = '{user_uuid}';"
         cur.execute(query)
+        conn.commit()
 
         # get all the details of the matching recipe
         query = f"select * from recipes where uuid = '{recipe_id}';"
