@@ -4,20 +4,19 @@ import os
 import psycopg2
 
 
-conn = None
-cur = None
-try:
-    conn = psycopg2.connect(
-        host=os.environ["HOST"],
-        database=os.environ["DB_NAME"],
-        user=os.environ["USERNAME"],
-        password=os.environ["PASSWORD"],
-        port=os.environ["PORT"]
-    )
-    cur = conn.cursor()
-except Exception as e:
-    print(e)
-    print("can't connect to db for some reason")
+def connect_to_db():
+    try:
+        conn = psycopg2.connect(
+            host=os.environ["HOST"],
+            database=os.environ["DB_NAME"],
+            user=os.environ["USERNAME"],
+            password=os.environ["PASSWORD"],
+            port=os.environ["PORT"]
+        )
+        return conn, conn.cursor()
+    except Exception as e:
+        print(e)
+        print("can't connect to db for some reason")
 
 
 def compare_labels(user_labels, cur):
@@ -56,6 +55,8 @@ def extract_data_from_event(event):
 
 def lambda_handler(event, context):
     user_uuid, file_key, user_labels = extract_data_from_event(event)
+
+    conn, cur = connect_to_db()
 
     # save to user db
     labels = json.dumps(user_labels)
