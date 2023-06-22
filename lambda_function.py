@@ -34,7 +34,6 @@ def compare_labels(user_labels, cur):
     best_match_id = None
     for recipe_uuid, recipe_labels in db_recipes:
         score = 0
-        print(recipe_labels)
         for label in user_labels:
             for recipe_label in recipe_labels:
                 if recipe_label["Name"].upper() == label["Name"].upper():
@@ -73,14 +72,22 @@ def lambda_handler(event, context):
         conn.commit()
 
         # get all the details of the matching recipe
-        query = f"select * from recipes where uuid = '{recipe_id}';"
+        query = f"select s3_file_key, week, index from recipes where uuid = '{recipe_id}';"
         cur.execute(query)
         matching_recipe = cur.fetchone()
 
         print(f"The final recipe is {matching_recipe}")
+        response = {
+            "recipe_uuid": recipe_id,
+            "s3_url": matching_recipe[0],
+            "week": matching_recipe[1],
+            "index": matching_recipe[2],
+            "user_uuid": user_uuid
+        }
     else:
-        print("no match found :( ")
+        response = "No match found :("
 
     cur.close()
+    print(f"Response is: {json.dumps(response)}")
 
-    return {"statusCode": 200, "body": json.dumps("Hello from Lambda!")}
+    return {"statusCode": 200, "body": json.dumps(response)}
